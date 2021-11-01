@@ -7,9 +7,10 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 .PHONY: help
 help:
 	@echo "Commands:"
-	@echo "venv    : creates development environment."
-	@echo "style   : runs style formatting."
-	@echo "clean   : cleans all unnecessary files."
+	@echo "venv : creates development environment."
+	@echo "style : runs style formatting."
+	@echo "clean : cleans all unnecessary files."
+	@echo "run_docker" : build a docker container and execute the pipeline
 
 # Environment
 .ONESHELL:

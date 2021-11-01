@@ -124,7 +124,7 @@ def test_train_models(train_models, data_train, data_test, y_train, y_test):
         raise error
 
     try:
-        results_models = set(os.listdir(config.MODEL_DIR))
+        results_models = {model for model in os.listdir(config.MODEL_DIR) if model.endswith(".pkl")}
         assert results_models.issubset(RESULTS_MODELS_EXPECTED)
 
     except FileNotFoundError as error:
