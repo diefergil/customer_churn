@@ -30,53 +30,53 @@ def import_data(pth):
     input:
             pth: a path to the csv
     output:
-            df: pandas dataframe
+            data_frame: pandas dataframe
     """
-    df = pd.read_csv(r"./data/bank_data.csv")
-    return df
+    data_frame = pd.read_csv(pth)
+    return data_frame
 
 
-def perform_eda(df):
+def perform_eda(bank_data):
     """
     perform eda on df and save figures to images folder
     input:
-            df: pandas dataframe
+            bank_data: pandas dataframe
 
     output:
             None
     """
 
     plt.figure(figsize=(20, 10))
-    df["Churn"].hist()
+    bank_data["Churn"].hist()
     plt.tight_layout()
     plt.savefig(config.EDA_IMAGES / "churn_distribution.png")
     plt.close()
 
     plt.figure(figsize=(20, 10))
-    df["Customer_Age"].hist()
+    bank_data["Customer_Age"].hist()
     plt.tight_layout()
     plt.savefig(config.EDA_IMAGES / "customer_age_distribution.png")
     plt.close()
 
     plt.figure(figsize=(20, 10))
-    df.Marital_Status.value_counts("normalize").plot(kind="bar")
+    bank_data.Marital_Status.value_counts("normalize").plot(kind="bar")
     plt.tight_layout()
     plt.savefig(config.EDA_IMAGES / "marital_status_distribution.png")
     plt.close()
 
     plt.figure(figsize=(20, 10))
-    sns.distplot(df["Total_Trans_Ct"])
+    sns.distplot(bank_data["Total_Trans_Ct"])
     plt.tight_layout()
     plt.savefig(config.EDA_IMAGES / "total_transaction_distribution.png")
     plt.close()
 
     plt.figure(figsize=(20, 10))
-    sns.heatmap(df.corr(), annot=False, cmap="Dark2_r", linewidths=2)
+    sns.heatmap(bank_data.corr(), annot=False, cmap="Dark2_r", linewidths=2)
     plt.tight_layout()
     plt.savefig(config.EDA_IMAGES / "heatmap.png", bbox_inches="tight")
 
 
-def encoder_helper(df, category_lst, response):
+def encoder_helper(data_frame, category_lst, response):
     """
     helper function to turn each categorical column into a new column with
     propotion of churn for each category - associated with cell 15 from the notebook
@@ -91,18 +91,18 @@ def encoder_helper(df, category_lst, response):
     """
     for col in category_lst:
         new_lst = []
-        group_obj = df.groupby(col).mean()[response]
+        group_obj = data_frame.groupby(col).mean()[response]
 
-        for val in df[col]:
+        for val in data_frame[col]:
             new_lst.append(group_obj.loc[val])
 
         new_col_name = col + "_" + response
-        df[new_col_name] = new_lst
+        data_frame[new_col_name] = new_lst
 
-    return df
+    return data_frame
 
 
-def perform_feature_engineering(df, response):
+def perform_feature_engineering(data_frame, response):
     """
     input:
               df: pandas dataframe
@@ -114,14 +114,16 @@ def perform_feature_engineering(df, response):
               y_train: y training data
               y_test: y testing data
     """
-    y = df["Churn"]
-    X = pd.DataFrame()
-    df = encoder_helper(df, constants.CAT_COLUMNS, response)
+    label = data_frame["Churn"]
+    input_data = pd.DataFrame()
+    data_frame = encoder_helper(data_frame, constants.CAT_COLUMNS, response)
 
-    X[constants.KEEP_COLS] = df[constants.KEEP_COLS]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    input_data[constants.KEEP_COLS] = data_frame[constants.KEEP_COLS]
+    data_train, data_test, y_train, y_test = train_test_split(
+        input_data, label, test_size=0.3, random_state=42
+    )
 
-    return X_train, X_test, y_train, y_test
+    return data_train, data_test, y_train, y_test
 
 
 def classification_report_image(
@@ -198,12 +200,12 @@ def classification_report_image(
     plt.close()
 
 
-def feature_importance_plot(model, X_data, output_pth):
+def feature_importance_plot(model, input_data, output_pth):
     """
     creates and stores the feature importances in pth
     input:
             model: model object containing feature_importances_
-            X_data: pandas dataframe of X values
+            input_data: pandas dataframe of X values
             output_pth: path to store the figure
 
     output:
@@ -215,7 +217,7 @@ def feature_importance_plot(model, X_data, output_pth):
     indices = np.argsort(importances)[::-1]
 
     # Rearrange feature names so they match the sorted feature importances
-    names = [X_data.columns[i] for i in indices]
+    names = [input_data.columns[i] for i in indices]
 
     # Create plot
     plt.figure(figsize=(20, 5))
@@ -225,21 +227,21 @@ def feature_importance_plot(model, X_data, output_pth):
     plt.ylabel("Importance")
 
     # Add bars
-    plt.bar(range(X_data.shape[1]), importances[indices])
+    plt.bar(range(input_data.shape[1]), importances[indices])
 
     # Add feature names as x-axis labels
-    plt.xticks(range(X_data.shape[1]), names, rotation=90)
+    plt.xticks(range(input_data.shape[1]), names, rotation=90)
     plt.tight_layout()
     plt.savefig(output_pth)
     plt.close()
 
 
-def train_models(X_train, X_test, y_train, y_test):
+def train_models(data_train, data_test, y_train, y_test):
     """
     train, store model results: images + scores, and store models
     input:
-              X_train: X training data
-              X_test: X testing data
+              data_train: X training data
+              data_test: X testing data
               y_train: y training data
               y_test: y testing data
     output:
@@ -254,15 +256,15 @@ def train_models(X_train, X_test, y_train, y_test):
         "criterion": ["gini", "entropy"],
     }
     cv_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv=5)
-    cv_rfc.fit(X_train, y_train)
+    cv_rfc.fit(data_train, y_train)
 
-    lrc.fit(X_train, y_train)
+    lrc.fit(data_train, y_train)
     # predict on train data
-    y_train_preds_rf = cv_rfc.best_estimator_.predict(X_train)
-    y_test_preds_rf = cv_rfc.best_estimator_.predict(X_test)
+    y_train_preds_rf = cv_rfc.best_estimator_.predict(data_train)
+    y_test_preds_rf = cv_rfc.best_estimator_.predict(data_test)
     # predict on test data
-    y_train_preds_lr = lrc.predict(X_train)
-    y_test_preds_lr = lrc.predict(X_test)
+    y_train_preds_lr = lrc.predict(data_train)
+    y_test_preds_lr = lrc.predict(data_test)
 
     # scores
     logger.info("random forest results")
@@ -278,13 +280,12 @@ def train_models(X_train, X_test, y_train, y_test):
 
     # plots
     # roc auc
-    lrc_plot = plot_roc_curve(lrc, X_test, y_test)
+    lrc_plot = plot_roc_curve(lrc, data_test, y_test)
     plt.figure(figsize=(15, 8))
-    ax = plt.gca()
+    plt_axes = plt.gca()
     # rfc_disp
-    plot_roc_curve(cv_rfc.best_estimator_, X_test, y_test, ax=ax, alpha=0.8)
-    lrc_plot.plot(ax=ax, alpha=0.8)
-    config.RESULTS_IMAGES
+    plot_roc_curve(cv_rfc.best_estimator_, data_test, y_test, ax=plt_axes, alpha=0.8)
+    lrc_plot.plot(ax=plt_axes, alpha=0.8)
     plt.savefig(config.RESULTS_IMAGES / "roc_curve_result.png")
     plt.close()
 
@@ -299,5 +300,5 @@ def train_models(X_train, X_test, y_train, y_test):
 
     # store feature importances plot
     feature_importance_plot(
-        cv_rfc.best_estimator_, X_train, config.RESULTS_IMAGES / "feature_importances.png"
+        cv_rfc.best_estimator_, data_train, config.RESULTS_IMAGES / "feature_importances.png"
     )
